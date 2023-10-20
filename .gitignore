@@ -35,6 +35,4 @@
 .vscode/
 
 # Specific files
-images/
-images_sequential/
-*.txt
+results/

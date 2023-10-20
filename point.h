@@ -1,6 +1,7 @@
 #ifndef POINT_H
 #define POINT_H
 
+
 // Point in 3D space.
 struct Point {
     double x; // x coordinate.

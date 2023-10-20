@@ -2,7 +2,6 @@
 #include <random>
 #include <cmath>
 #include <omp.h>
-#include <iostream>
 
 #include "k_means.h"
 #include "params.h"
@@ -47,25 +46,15 @@ double KMeans::distance(const Point &p, const Centroid &c) {
     return sqrt((p.x - c.x)*(p.x - c.x) + (p.y - c.y)*(p.y - c.y));
 }
 
-bool KMeans::isConverged(const std::vector<int>& previousAssignments) {
-    // Check if the points have changed cluster.
-    for (int i = 0; i < N; i++) {
-        // No convergence if a point has changed cluster.
-        if (points[i].cluster != previousAssignments[i]) {
-            return false;
-        }
-    }
 
-    // Convergence if no point has changed cluster.
-    return true;
-}
-
-
-void KMeans::kMeansIterationSequential() {
+bool KMeans::kMeansIterationSequential() {
     // Variables for the mean of the points in each cluster.
-    double sum_x[K] = {0}; // Sum of x coordinates of points in each cluster.
-    double sum_y[K] = {0}; // Sum of y coordinates of points in each cluster.
-    int sizes[K] = {0}; // Number of points in each cluster.
+    std::vector<double> sum_x(K, 0); // Sum of x coordinates of points in each cluster.
+    std::vector<double> sum_y(K, 0); // Sum of y coordinates of points in each cluster.
+    std::vector<int> sizes(K, 0); // Number of points in each cluster.
+
+    // Convergence flag.
+    bool converged = true;
 
     // Assign each point to the closest centroid.
     for(int i=0; i<N; i++) {
@@ -91,8 +80,77 @@ void KMeans::kMeansIterationSequential() {
         
     // Update the centroids.
     for(int i=0; i<K ; i++){
+        // Save the previous centroid coordinates.
+        double tmp_x = centroids[i].x;
+        double tmp_y = centroids[i].y;
+
         // Update the centroid of the cluster.
         centroids[i].x = sum_x[i] / sizes[i];
         centroids[i].y = sum_y[i] / sizes[i];
+        
+        // Check for convergence.
+        if(fabs(tmp_x - centroids[i].x) > EPSILON || fabs(tmp_y - centroids[i].y) > EPSILON) {
+            converged = false;
+        }
     }
+
+    return converged;
 }
+
+bool KMeans::kMeansIterationParallel() {
+    // Variables for the mean of the points in each cluster.
+    std::vector<double> sum_x(K, 0); // Sum of x coordinates of points in each cluster.
+    std::vector<double> sum_y(K, 0); // Sum of y coordinates of points in each cluster.
+    std::vector<int> sizes(K, 0); // Number of points in each cluster.
+
+    // Convergence flag.
+    bool converged = true;
+
+    #pragma omp parallel
+    {
+        #pragma omp for schedule(static)
+        // Assign each point to the closest centroid.
+        for(int i=0; i<N; i++) {
+            int clusterIdx = -1; // Index of the closest cluster (initialize to -1).
+            double minDist = std::numeric_limits<int>::max(); // Distance to the closest cluster (initialized to infinity).
+
+            for(int j=0; j<K; j++) {
+                double dist = distance(points[i], centroids[j]);
+
+                if(dist < minDist) {
+                    minDist = dist;
+                    clusterIdx = j;
+                }
+            }
+
+            points[i].cluster = clusterIdx;
+
+            // Calculate the mean of the points in each cluster.
+            #pragma omp atomic
+            sum_x[clusterIdx] += points[i].x; // Sum the x coordinate of the point assigned to the cluster.
+            #pragma omp atomic
+            sum_y[clusterIdx] += points[i].y; // Sum the y coordinate of the point assigned to the cluster.
+            #pragma omp atomic
+            sizes[clusterIdx]++; // Increment the size of the cluster.
+        }
+    }
+
+    // Update the centroids.
+    for(int i=0; i<K ; i++){
+        // Save the previous centroid coordinates.
+        double tmp_x = centroids[i].x;
+        double tmp_y = centroids[i].y;
+                    
+        // Update the centroid of the cluster.
+        centroids[i].x = sum_x[i] / sizes[i];
+        centroids[i].y = sum_y[i] / sizes[i];
+
+        // Check for convergence.
+        if(fabs(tmp_x - centroids[i].x) > EPSILON || fabs(tmp_y - centroids[i].y) > EPSILON) {
+            converged = false;
+        }
+    }
+
+    return converged;
+}
+

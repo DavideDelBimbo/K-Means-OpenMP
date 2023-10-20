@@ -42,22 +42,22 @@ public:
     */
     double distance(const Point& p, const Centroid& c);
 
-    /*
-    Method to check if the algorithm has converged.
-
-    Parameters:
-        - previousAssignments (std::vector<int>): vector of previous assignments of the points to clusters.
     
+    /*
+    Method to run one iteration of the K-Means algorithm in sequential.
+
     Returns:
         - (bool): true if the algorithm has converged, false otherwise.
     */
-    bool isConverged(const std::vector<int>& previousAssignments);
+    bool kMeansIterationSequential();
 
-    
     /*
-    Method to run one iteration of the K-Means algorithm in sequential. 
+    Method to run one iteration of the K-Means algorithm in parallel.
+
+    Returns:
+        - (bool): true if the algorithm has converged, false otherwise.
     */
-    void kMeansIterationSequential();
+    bool kMeansIterationParallel();
     
 
     /*
@@ -66,7 +66,7 @@ public:
     Returns:
         - (std::vector<Point> &): reference to the vector of points.
     */
-    std::vector<Point>& getPoints() { return points; }
+    const std::vector<Point>& getPoints() const { return points; }
 
     /*
     Getter methods for the clusters.
@@ -74,7 +74,7 @@ public:
     Returns:
         - (std::vector<Centroid> &): reference to the vector of clusters.
     */
-    std::vector<Centroid>& getClusters() { return centroids; }
+    const std::vector<Centroid>& getClusters() const { return centroids; }
 private:
     int N; // Number of points.
     int K; // Number of clusters.

@@ -6,6 +6,8 @@
 #define NUM_POINTS 100000 // Number of points.
 #define NUM_CLUSTERS 10 // Number of clusters.
 #define MAX_ITERATIONS 50 // Maximum number of iterations.
-#define PARALLEL true // Parallel or sequential execution.
+#define EPSILON 1e-6 // Precision for the convergence.
+#define PARALLEL false // Parallel or sequential execution.
+#define LOG true // Log the results.
 
 #endif // PARAMS_H
