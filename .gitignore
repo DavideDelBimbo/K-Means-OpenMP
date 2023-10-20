@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+#Settings
+.vscode/
+
+# Specific files
+images/
+images_sequential/
+*.txt
