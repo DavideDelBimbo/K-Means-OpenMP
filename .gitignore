@@ -34,5 +34,7 @@
 #Settings
 .vscode/
 
-# Specific files
+# Folders
 results/
+lib/
+build/
