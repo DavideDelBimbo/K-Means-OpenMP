@@ -12,7 +12,11 @@ namespace Sequential {
 
     std::vector<double> coordinates; // Vector of coordinates.
     int clusterId; // Identifier of the cluster.
-      
+
+    /*
+      * Default constructor.
+    */
+    Centroid() = default;
 
     /*
       * Centroid constructor.

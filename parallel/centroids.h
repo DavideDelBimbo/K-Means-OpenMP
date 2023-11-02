@@ -16,6 +16,11 @@ namespace Parallel {
 
 
     /*
+      * Centroids default constructor.
+    */
+    Centroids() = default;
+
+    /*
       * Centroids constructor.
       * 
       * @param size: Number of clusters.

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include <random>
 #include <cmath>
 #include <vector>
@@ -11,10 +12,24 @@
 
 
 namespace Sequential {
-    KMeans::KMeans(const int N, const int K, int d) : N(N), K(K), dimensions(d), points(initializePoints()), centroids(initializeCentroids()) { };
+    KMeans::KMeans(const int N, const int K, const int d) : N(N), K(K), dimensions(d) {
+        // Initialize the points with random coordinates.
+        points = initializeRandomPoints();
+
+        // Initialize the centroids.
+        centroids = initializeCentroids();
+    };
+
+    KMeans::KMeans(const std::string& filePath, const int K) : filePath(filePath), K(K) {
+        // Initialize the points from input file.
+        points = initializeInputPoints();
+
+        // Initialize the centroids.
+        centroids = initializeCentroids();
+    };
 
 
-    void KMeans::run() {
+    void KMeans::run(const std::string &basePath, const bool log) {
         std::cout << "Running sequential k-means with " << N << " points and " << K << " clusters." << std::endl;
 
         // Variables for convergence.
@@ -26,13 +41,14 @@ namespace Sequential {
         FolderPaths paths;
 
         // Variable for logging.
-        bool canPlot = LOG && (dimensions == 2 || dimensions == 3);
+        std::string initMode = filePath.empty() ? "random" : "input";
+        bool canPlot = log && (dimensions == 2 || dimensions == 3);
         if (!canPlot) {
-            std::cout << "LOG is disabled (" << (LOG ? "LOG=true" : "LOG=false") << ") or cannot plot points with specified dimensions (DIMENSIONS=" << dimensions << ")." << std::endl;
-        } else {
-            // Create the folders for the results.
-            paths = create_folders("results\\sequential\\dimensions_" + std::to_string(dimensions) + "\\clusters_" + std::to_string(K) + "\\points_" + std::to_string(N) + "\\");
-        }
+            std::cout << "LOG is disabled (" << (log ? "LOG=true" : "LOG=false") << ") or cannot plot points with specified dimensions (DIMENSIONS=" << dimensions << ")." << std::endl;
+        } 
+
+        // Create the folders for the results.
+        paths = create_folders(basePath, "sequential", N, K, dimensions, canPlot);
 
         while (iterations < MAX_ITERATIONS && !converged) {
             // Start the timer.
@@ -52,7 +68,7 @@ namespace Sequential {
                 log_data(iterations, paths, "sequential", "centroids", getCoordinates(centroids), getIds(centroids));
                 
                 // Plot the points and the centroids.
-                plot_data(iterations, paths, "sequential", N, K, dimensions);
+                plot_data(iterations, paths, "sequential", initMode, N, K, dimensions);
             }
 
             iterations++;
@@ -66,11 +82,11 @@ namespace Sequential {
         std::cout << "Converged after " << iterations << " iterations in " << executionTimes << " seconds." << std::endl;
 
         // Save the results.
-        save_results(iterations, executionTimes, ".\\results\\sequential\\", "sequential", N, K, dimensions);
+        save_results(iterations, executionTimes, paths, "sequential", N, K, dimensions);
     }
 
 
-    std::vector<Point> KMeans::initializePoints() {
+    const std::vector<Point> KMeans::initializeRandomPoints() {
         // Uniform distribution between 0 and MAX_RANGE.
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_real_distribution<double> uniformDistribution(0, MAX_RANGE); // Uniform distribution.
@@ -79,7 +95,7 @@ namespace Sequential {
         std::vector<Point> points(N, Point(dimensions, std::vector<double>(dimensions, 0), 0));
 
         // Generate N random points from the uniform distribution.
-        for(int i = 0; i < N; i++) {            
+        for(int i = 0; i < N; i++) {
             for(int dim = 0; dim < dimensions; dim++) {
                 // Generate a random coordinate.
                 points[i].coordinates[dim] = uniformDistribution(generator);
@@ -92,7 +108,64 @@ namespace Sequential {
         return points;
     }
 
-    std::vector<Centroid> KMeans::initializeCentroids() {
+    const std::vector<Point> KMeans::initializeInputPoints() {
+        // File stream.
+        std::ifstream file;
+        std::string line, word;
+
+        // Open the file.
+        file.open(filePath, std::ios::in);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("ERROR: couldn't open file");
+        }
+
+        // Count the number of lines and columns in the file.
+        int numColumns = 0;
+
+        std::getline(file, line);
+        std::stringstream ss(line);
+        while (std::getline(ss, line, ',')) numColumns++;
+        
+        // Count the number of lines in the file.
+        int numLines = 1;
+        while (std::getline(file, line)) numLines++;
+
+        // Set N and dimensions based on the file content.
+        N = numLines; // Number of points.
+        dimensions = numColumns; // Number of dimensions.
+
+
+        // Reopen the file for reading from the beginning.
+        file.clear();
+        file.seekg(0, std::ios::beg);
+
+        // Initialize vector of points.
+        std::vector<Point> points(N, Point(dimensions, std::vector<double>(dimensions, 0), 0));
+
+        int i = 0;
+        while (getline(file, line)) {
+            std::stringstream str(line);
+            int dim = 0;
+            while (getline(str, word, ',')) {
+                // Set the coordinate to the point.
+                points[i].coordinates[dim] = std::stod(word);
+
+                // Increment the dimension.
+                dim++;
+            }
+
+            // Set the identifier of the point.
+            points[i].pointId = i;
+
+            // Increment the point.
+            i++;
+        }
+
+        return points;
+    }
+
+    const std::vector<Centroid> KMeans::initializeCentroids() {
         // Uniform distribution between 0 and N-1 for selecting unique indices.
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_int_distribution<int> intDistribution(0, N - 1); // Uniform distribution.

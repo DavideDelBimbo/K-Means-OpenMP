@@ -17,6 +17,11 @@ namespace Parallel {
 
 
     /*
+      * Points default constructor.
+    */
+    Points() = default;
+
+    /*
       * Points constructor.
       * 
       * @param size: Number of points.

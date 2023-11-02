@@ -13,7 +13,13 @@ namespace Sequential {
     std::vector<double> coordinates; // Vector of coordinates.
     int pointId; // Identifier of the point.
     int clusterId; // Identifier of the cluster to which the point belongs.
-        
+
+
+    /*
+      * Point default constructor.
+    */
+    Point() = default;
+
     /*
       * Point constructor.
       * 

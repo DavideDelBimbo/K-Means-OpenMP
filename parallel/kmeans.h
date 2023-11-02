@@ -20,11 +20,23 @@ namespace Parallel {
             */
             KMeans(const int N, const int K, const int dimensions, const int threads);
 
+            /*
+                * KMeans constructor.
+                * 
+                * @param filePath: Path of the file with the points.
+                * @param K: Number of clusters.
+                * @param threads: Number of threads.
+            */
+            KMeans(const std::string& filePath, const int K, const int threads);
+
 
             /*
                 * Execution of the k-means algorithm.
+                *
+                * @param base_path: The base path for the results.
+                * @param log: True if the results should be logged, false otherwise.
             */
-            void run();
+            void run(const std::string &base_path = "results\\", const bool log = false);
 
 
             /*
@@ -49,9 +61,10 @@ namespace Parallel {
 
         private:
             int N; // Number of points.
-            int K; // Number of clusters.
+            const int K; // Number of clusters.
             int dimensions; // Number of dimensions.
-            int threads; // Number of threads.
+            const int threads; // Number of threads.
+            const std::string filePath = ""; // Path of the file with the points.
 
             Points points; // Vector of points.
             Centroids centroids; // Vector of centroids.
@@ -62,14 +75,21 @@ namespace Parallel {
                 *
                 * @returns (Points) The points.
             */
-            Points initializePoints();
+            const Points initializeRandomPoints();
+
+            /*
+                * Initializes the points with form input file.
+                *
+                * @returns (std::vector<Point>) Vector of points.
+            */
+            const Points initializeInputPoints();
 
             /*
                 * Initializes the centroids with k random points.
                 *
                 * @returns (Centroids) The centroids.
             */
-            Centroids initializeCentroids();
+            const Centroids initializeCentroids();
 
 
             /*

@@ -1,6 +1,7 @@
 #ifndef K_UTILS_H
 #define K_UTILS_H
 
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -15,6 +16,7 @@
 
 
 struct FolderPaths {
+    std::string baseFolder;
     std::string outputFolder;
     std::string logFolder;
     std::string imagesFolder;
@@ -23,33 +25,49 @@ struct FolderPaths {
 /*
     * Function to create necessary folders and retrieve folder paths.
     *
-    * @param basePath The base path where the folders are created.
+    * @param basePath: The base path where the folders are created.
+    * @param executionType: Type of the execution (sequential or parallel).
+    * @param N: Number of points.
+    * @param K: Number of clusters.
+    * @param dimensions: Dimensions of the data.
     *
     * @return The paths of the folders.
 */
-inline FolderPaths create_folders(const std::string& basePath) {
+inline FolderPaths create_folders(const std::string& basePath, std::string executionType, int N, int K, int dimensions, bool log) {
+    // Convert to lowercase the execution type.
+    std::transform(executionType.begin(), executionType.end(), executionType.begin(), ::tolower);
+    
     struct stat buffer;
     FolderPaths paths;
 
     // Set the folder where the results are stored.
-    paths.outputFolder = basePath;
+    paths.baseFolder = basePath + executionType + "\\";
     // Create folder if not exists.
-    if (stat(paths.outputFolder.c_str(), &buffer) != 0) {
-        system(("mkdir " + paths.outputFolder).c_str());
+    if (stat(paths.baseFolder.c_str(), &buffer) != 0) {
+        system(("mkdir " + paths.baseFolder).c_str());
     }
 
-    // Set the folder where the logs are stored.
-    paths.logFolder = paths.outputFolder + "logs\\";
-    // Create folder if not exists.
-    if (stat(paths.logFolder.c_str(), &buffer) != 0) {
-        system(("mkdir " + paths.logFolder).c_str());
-    }
+    if (log) {
+        // Set the folder where the outputs are stored.
+        paths.outputFolder = paths.baseFolder + (executionType == "parallel" ? ("threads_" + std::to_string(omp_get_max_threads()) + "\\") : "") + "dimensions_" + std::to_string(dimensions) + "\\clusters_" + std::to_string(K) + "\\points_" + std::to_string(N) + "\\";
+        // Create folder if not exists.
+        if (stat(paths.outputFolder.c_str(), &buffer) != 0) {
+            system(("mkdir " + paths.outputFolder).c_str());
+        }
 
-    // Set the folder where the images are stored.
-    paths.imagesFolder = paths.outputFolder + "images\\";
-    // Create folder if not exists.
-    if (stat(paths.imagesFolder.c_str(), &buffer) != 0) {
-        system(("mkdir " + paths.imagesFolder).c_str());
+        // Set the folder where the logs are stored.
+        paths.logFolder = paths.outputFolder + "logs\\";
+        // Create folder if not exists.
+        if (stat(paths.logFolder.c_str(), &buffer) != 0) {
+            system(("mkdir " + paths.logFolder).c_str());
+        }
+
+        // Set the folder where the images are stored.
+        paths.imagesFolder = paths.outputFolder + "images\\";
+        // Create folder if not exists.
+        if (stat(paths.imagesFolder.c_str(), &buffer) != 0) {
+            system(("mkdir " + paths.imagesFolder).c_str());
+        }
     }
 
     return paths;
@@ -97,11 +115,12 @@ inline void log_data(int iteration, const FolderPaths& paths, std::string execut
     * @param iteration: Current iteration.
     * @param paths: Paths of the folders.
     * @param executionType: Type of the execution (sequential or parallel).
+    * @param initMode: Mode of the input (random or input).
     * @param N: Number of points.
     * @param K: Number of clusters.
     * @param dimensions: Dimensions of the data.
 */
-inline void plot_data(int iteration, const FolderPaths& paths, std::string executionType, int N, int K, int dimensions) {
+inline void plot_data(int iteration, const FolderPaths& paths, std::string executionType, std::string initMode, int N, int K, int dimensions) {
     // Convert to lowercase the execution type string.
     std::transform(executionType.begin(), executionType.end(), executionType.begin(), ::tolower);
 
@@ -156,9 +175,11 @@ inline void plot_data(int iteration, const FolderPaths& paths, std::string execu
     gnuplot += "set output '" + paths.imagesFolder + "plot_" + outputName + ".png';";
 
     if (dimensions == 2) {
-        // Set the range of the axes.
-        gnuplot += "set xrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
-        gnuplot += "set yrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+        if(initMode == "random") {
+            // Set the range of the axes.
+            gnuplot += "set xrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+            gnuplot += "set yrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+        }
 
         // Plot the points.
         gnuplot += "plot '" + paths.logFolder + "points_" + outputName + ".txt' using 1:2:3 with points pointtype 20 palette notitle,";
@@ -166,10 +187,12 @@ inline void plot_data(int iteration, const FolderPaths& paths, std::string execu
         // Plot the centroids.
         gnuplot += "'" + paths.logFolder + "centroids_" + outputName + ".txt' using 1:2:(0.08) with circles linewidth 2 linecolor rgb 'black' notitle";
     } else if (dimensions == 3) {
-        // Set the range of the axes.
-        gnuplot += "set xrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
-        gnuplot += "set yrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
-        gnuplot += "set zrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+        if (initMode == "random") {
+            // Set the range of the axes.
+            gnuplot += "set xrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+            gnuplot += "set yrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+            gnuplot += "set zrange[" + std::to_string(0) + ":" + std::to_string(MAX_RANGE) + "];";
+        }
 
         // Set grid.
         gnuplot += "set xyplane at 0;set grid vertical xtics ytics ztics;set view 60, 30;";
@@ -207,12 +230,12 @@ inline void convert_gif(int iterations, double executionTimes, const FolderPaths
     std::string outputName = ss.str();
 
 
-    // Set the delay.
-    double delay = executionTimes / iterations;
+    // Set the delay (converted to milliseconds and multiplied by the animation factor for a better visualization).
+    double delay = (executionTimes / iterations) * 100  * ANIMATION_FACTOR;
 
 
     // Set the convert command.
-    std::string convert = "convert -delay " + std::to_string(delay) + " -loop 0 " + paths.imagesFolder + "*.png " + paths.outputFolder + executionType + "_" + std::to_string(executionTimes) + "s.gif";
+    std::string convert = "magick -delay " + std::to_string(delay) + " -loop 0 " + paths.imagesFolder + "*.png " + paths.outputFolder + executionType + "_" + std::to_string(executionTimes) + "s.gif";
 
     // Create GIF.
     system(convert.c_str());
@@ -239,7 +262,7 @@ inline void convert_gif(int iterations, double executionTimes, const FolderPaths
     * @param K: Number of clusters.
     * @param dimensions: Dimensions of the data.
 */ 
-inline void save_results(int iterations, double executionTimes, const std::string& outputFolder, std::string executionType, int N, int K, int dimensions) {
+inline void save_results(int iterations, double executionTimes, const FolderPaths& paths, std::string executionType, int N, int K, int dimensions) {
     struct stat buffer;
     std::ofstream outfile;
 
@@ -248,19 +271,13 @@ inline void save_results(int iterations, double executionTimes, const std::strin
     std::transform(executionType.begin(), executionType.end(), executionType.begin(), ::tolower);
 
 
-    // Create output folder if not exists.
-    if (stat(outputFolder.c_str(), &buffer) != 0) {
-        system(("mkdir " + outputFolder).c_str());
-    }
-
-
     // Check if the file exists
-    if (stat((outputFolder + "results.txt").c_str(), &buffer) == 0) {
+    if (stat((paths.baseFolder + "results.txt").c_str(), &buffer) == 0) {
         // File exists, append to existing one
-        outfile.open(outputFolder + "results.txt", std::ios_base::app);
+        outfile.open(paths.baseFolder + "results.txt", std::ios_base::app);
     } else {
         // File doesn't exist, create new one with header
-        outfile.open(outputFolder + "results.txt");
+        outfile.open(paths.baseFolder + "results.txt");
         outfile << (executionType == "parallel" ? "num_threads " : "") << "num_points num_clusters dimensions execution_time iterations" << std::endl;
     }
 

@@ -19,11 +19,22 @@ namespace Sequential {
             */
             KMeans(const int N, const int K, const int dimensions);
 
+            /*
+                * KMeans constructor.
+                * 
+                * @param filePath: Path of the file with the points.
+                * @param K: Number of clusters.
+            */
+            KMeans(const std::string& filePath, const int K);
+
 
             /*
                 * Execution of the k-means algorithm.
+                *
+                * @param base_path: The base path for the results.
+                * @param log: True if the results should be logged, false otherwise.
             */
-            void run();
+            void run(const std::string &base_path = "results\\", const bool log = false);
 
 
             /*
@@ -48,8 +59,9 @@ namespace Sequential {
 
         private:
             int N; // Number of points.
-            int K; // Number of clusters.
+            const int K; // Number of clusters.
             int dimensions; // Number of dimensions.
+            const std::string filePath = ""; // Path of the file with the points.
 
             std::vector<Point> points; // Vector of points.
             std::vector<Centroid> centroids; // Vector of centroids.
@@ -60,14 +72,21 @@ namespace Sequential {
                 *
                 * @returns (std::vector<Point>) Vector of points.
             */
-            std::vector<Point> initializePoints();
+            const std::vector<Point> initializeRandomPoints();
+
+            /*
+                * Initializes the points with form input file.
+                *
+                * @returns (std::vector<Point>) Vector of points.
+            */
+            const std::vector<Point> initializeInputPoints();
 
             /*
                 * Initializes the centroids with k random points.
                 *
                 * @returns (std::vector<Centroid>) Vector of centroids.
             */
-            std::vector<Centroid> initializeCentroids();
+            const std::vector<Centroid> initializeCentroids();
 
 
             /*

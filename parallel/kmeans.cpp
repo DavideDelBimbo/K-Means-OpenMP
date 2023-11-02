@@ -11,10 +11,25 @@
 
 
 namespace Parallel {
-    KMeans::KMeans(const int N, const int K, const int d, const int t) : N(N), K(K), dimensions(d), threads(t), points(initializePoints()), centroids(initializeCentroids()) { };
+    KMeans::KMeans(const int N, const int K, const int d, const int t) : N(N), K(K), dimensions(d), threads(t) {
+        // Initialize the points with random coordinates.
+        points = initializeRandomPoints();
+
+        // Initialize the centroids.
+        centroids = initializeCentroids();
+    };
+
+    KMeans::KMeans(const std::string& filePath, const int K, const int t) : filePath(filePath), K(K), threads(t) {
+        // Initialize the points from input file.
+        points = initializeInputPoints();
+
+        // Initialize the centroids.
+        centroids = initializeCentroids();
+    };
 
 
-    void KMeans::run() {
+
+    void KMeans::run(const std::string &basePath, const bool log) {
         // Set the number of threads.
         omp_set_num_threads(threads);
 
@@ -29,13 +44,14 @@ namespace Parallel {
         FolderPaths paths;
 
         // Variable for logging.
-        bool canPlot = LOG && (dimensions == 2 || dimensions == 3);
+        std::string initMode = filePath.empty() ? "random" : "input";
+        bool canPlot = log && (dimensions == 2 || dimensions == 3);
         if (!canPlot) {
-            std::cout << "LOG is disabled (" << (LOG ? "LOG=true" : "LOG=false") << ") or cannot plot points with specified dimensions (DIMENSIONS=" << dimensions << ")." << std::endl;
-        } else {
-            // Create the folders for the results.
-            paths = create_folders("results\\parallel\\threads_" + std::to_string(omp_get_max_threads()) + "\\dimensions_" + std::to_string(dimensions) + "\\clusters_" + std::to_string(K) + "\\points_" + std::to_string(N) + "\\");
+            std::cout << "LOG is disabled (" << (log ? "LOG=true" : "LOG=false") << ") or cannot plot points with specified dimensions (DIMENSIONS=" << dimensions << ")." << std::endl;
         }
+
+        // Create the folders for the results.
+        paths = create_folders(basePath, "parallel", N, K, dimensions, canPlot);
 
         while (iterations < MAX_ITERATIONS && !converged) {
             // Start the timer.
@@ -55,7 +71,7 @@ namespace Parallel {
                 log_data(iterations, paths, "parallel", "centroids", getCoordinates(centroids), getIds(centroids));
                 
                 // Plot the points and the centroids.
-                plot_data(iterations, paths, "parallel", N, K, dimensions);
+                plot_data(iterations, paths, "parallel", initMode, N, K, dimensions);
             }
 
             iterations++;
@@ -69,11 +85,11 @@ namespace Parallel {
         std::cout << "Converged after " << iterations << " iterations in " << executionTimes << " seconds." << std::endl;
 
         // Save the results.
-        save_results(iterations, executionTimes, ".\\results\\parallel\\", "parallel", N, K, dimensions);
+        save_results(iterations, executionTimes, paths, "parallel", N, K, dimensions);
     }
 
 
-    Points KMeans::initializePoints() {
+    const Points KMeans::initializeRandomPoints() {
         // Uniform distribution between 0 and MAX_RANGE.
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_real_distribution<double> uniformDistribution(0, MAX_RANGE); // Uniform distribution.
@@ -95,7 +111,64 @@ namespace Parallel {
         return points;
     }
 
-    Centroids KMeans::initializeCentroids() {
+    const Points KMeans::initializeInputPoints() {
+        // File stream.
+        std::ifstream file;
+        std::string line, word;
+
+        // Open the file.
+        file.open(filePath, std::ios::in);
+
+        if (!file.is_open()) {
+            throw std::runtime_error("ERROR: couldn't open file");
+        }
+
+        // Count the number of lines and columns in the file.
+        int numColumns = 0;
+
+        std::getline(file, line);
+        std::stringstream ss(line);
+        while (std::getline(ss, line, ',')) numColumns++;
+        
+        // Count the number of lines in the file.
+        int numLines = 1;
+        while (std::getline(file, line)) numLines++;
+
+        // Set N and dimensions based on the file content.
+        N = numLines; // Number of points.
+        dimensions = numColumns; // Number of dimensions.
+
+
+        // Reopen the file for reading from the beginning.
+        file.clear();
+        file.seekg(0, std::ios::beg);
+
+        // Initialize points structure.
+        Points points(N, dimensions, std::vector<double>(N * dimensions, 0), std::vector<int>(N, 0));
+
+        int i = 0;
+        while (getline(file, line)) {
+            std::stringstream str(line);
+            int dim = 0;
+            while (getline(str, word, ',')) {
+                // Set the coordinate to the point.
+                points.coordinates[i + N * dim] = std::stod(word);
+
+                // Increment the dimension.
+                dim++;
+            }
+
+            // Set the identifier of the point.
+            points.pointsIds[i] = i;
+
+            // Increment the point.
+            i++;
+        }
+
+        return points;
+    }
+
+    const Centroids KMeans::initializeCentroids() {
         // Uniform distribution between 0 and N-1 for selecting unique indices.
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_int_distribution<int> intDistribution(0, N - 1); // Uniform distribution.
@@ -156,8 +229,17 @@ namespace Parallel {
                     }
                 }
 
+
                 // Assign the point to the closest cluster.
-                points.clustersIds[i] = minClusterId;
+                if(points.clustersIds[i] != minClusterId) {
+                    // Check for convergence.
+                    converged = false;
+
+                    // Update the identifier of the cluster.
+                    points.clustersIds[i] = minClusterId;
+
+                }
+
 
                 // Calculate the mean of the points in each cluster.
                 for(int dim = 0; dim < dimensions; dim++) {
@@ -165,33 +247,24 @@ namespace Parallel {
                     // Sum the coordinates of the point assigned to the cluster.
                     clustersSum[minClusterId + K * dim] += points.coordinates[i + N * dim];
                 }
-
+                
                 #pragma omp atomic
                 // Increment the size of the cluster.
                 clustersSize[minClusterId]++;
             }
-            
+        
+
             #pragma omp for schedule(static) nowait
             // Update the centroids.
             for(int j = 0; j < K ; j++){
-                // Temporary vector for the previous coordinates of the centroid.
-                std::vector<double> tmpCoordinates(dimensions, 0);
-
                 // Update the centroid of the cluster.
                 for(int dim = 0; dim < dimensions; dim++) {
-                    // Save the previous centroid coordinates.
-                    tmpCoordinates[dim] = centroids.coordinates[j + K * dim];
-
                     // Calculate the new centroid coordinates.
                     centroids.coordinates[j + K * dim] = clustersSum[j + K * dim] / clustersSize[j];
-                
-                    // Check for convergence.
-                    if (fabs(tmpCoordinates[dim] - centroids.coordinates[j + K * dim]) > EPSILON) {
-                        converged = false;
-                    }
                 }
             }
         }
+        
 
         return converged;
     }
