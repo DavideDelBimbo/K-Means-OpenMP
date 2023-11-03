@@ -31,21 +31,21 @@ Follow these steps to set up and compile the code:
 
 ## Usage
 To execute the code, use the following command:
-<p align="center"><code>`<code> ./kmean <init_mode> [<number_of_points>, <dataset_path>] <number_of_clusters> [<number_of_dimensions>] <execution_type> [<number_of_threads>] <base_path> ['log']</code></p>
+<p align="center"><code>./kmean --input_mode [--num_points, --file_path] --num_clusters [--dimensions] --execution_type [--num_threads] --base_path [--logs]</code></p>
 
 Where:
-- `<init_mode>`: The initialization mode of points (use either 'random' or 'input').
-- `<number_of_points>` (required only with `<init_mode> = 'random'`): The number of points to generate.
-- `<dataset_path>` (required only with `<init_mode> = 'input'`): Path to dataset with points coordinates to generate.
-- `<number_of_clusters>`: The number of clusters to generate.
-- `<number_of_dimensions>` (required only with `<init_mode> = 'random'`): The number of dimensions for each data point.
-- `<execution_type>`: The execution type (use either 'parallel' or 'sequential').
-- `<number_of_threads>` (required only with `<execution_type> = 'parallel'`): The number of threads to use for parallel execution.
-- `<base_path>`: The base path for the results.
-- `'log'` (optional): If provided, it will generate a GIF animation of the execution (note that this may affect execution times).
+- `--input_mode`: The initialization mode of points (use either 'random' or 'input').
+- `--num_points` (required only with `<init_mode> = 'random'`): The number of points to generate.
+- `--file_path` (required only with `<init_mode> = 'input'`): Path to dataset with points coordinates to generate.
+- `--num_clusters`: The number of clusters to generate.
+- `--dimensions` (required only with `<init_mode> = 'random'`): The number of dimensions for each data point.
+- `--execution_type`: The execution type (use either 'parallel' or 'sequential').
+- `--num_threads` (required only with `<execution_type> = 'parallel'`): The number of threads to use for parallel execution.
+- `--base_path`: The base path for the results.
+- `--logs` (optional): If provided, it will generate a GIF animation of the execution (note that this may affect execution times).
 
 For example:
-<p align="center"><code>./kmean --init_mode='random' --num_points=100000 --num_clusters=10 --dimensions=2 --execution_type=parallel --num_threads=3 --base_path='./results/' --log</code></p>
+<p align="center"><code>./kmean --init_mode='random' --num_points=100000 --num_clusters=10 --dimensions=2 --execution_type=parallel --num_threads=3 --base_path='./results/' --logs</code></p>
 <p align="center"><code>./kmean --init_mode='input' --file_path=datasets/dataset_100K.csv --num_clusters=4 --execution_type=sequential --base_path='./results/'</code></p>
 
 ## Results
