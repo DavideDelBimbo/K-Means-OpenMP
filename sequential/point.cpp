@@ -2,5 +2,5 @@
 
 
 namespace Sequential {
-    Point::Point(const int d, const std::vector<double>& coords, const int id) : dimensions(d), coordinates(coords), pointId(id), clusterId(-1) { }
+    Point::Point(const int d, const std::vector<double>& coords, const int pId, const int cId) : dimensions(d), coordinates(coords), pointId(pId), clusterId(cId) { }
 }

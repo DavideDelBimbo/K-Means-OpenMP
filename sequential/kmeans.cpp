@@ -92,7 +92,7 @@ namespace Sequential {
         std::uniform_real_distribution<double> uniformDistribution(0, MAX_RANGE); // Uniform distribution.
 
         // Initialize vector of points.
-        std::vector<Point> points(N, Point(dimensions, std::vector<double>(dimensions, 0), 0));
+        std::vector<Point> points(N, Point(dimensions, std::vector<double>(dimensions, 0), 0, -1));
 
         // Generate N random points from the uniform distribution.
         for(int i = 0; i < N; i++) {
@@ -122,7 +122,6 @@ namespace Sequential {
 
         // Count the number of lines and columns in the file.
         int numColumns = 0;
-
         std::getline(file, line);
         std::stringstream ss(line);
         while (std::getline(ss, line, ',')) numColumns++;
@@ -141,7 +140,7 @@ namespace Sequential {
         file.seekg(0, std::ios::beg);
 
         // Initialize vector of points.
-        std::vector<Point> points(N, Point(dimensions, std::vector<double>(dimensions, 0), 0));
+        std::vector<Point> points(N, Point(dimensions, std::vector<double>(dimensions, 0), 0, -1));
 
         int i = 0;
         while (getline(file, line)) {
@@ -166,6 +165,10 @@ namespace Sequential {
     }
 
     const std::vector<Centroid> KMeans::initializeCentroids() {
+        if (K > N) {
+            throw std::runtime_error("ERROR: K cannot be greater than N!");
+        }
+
         // Uniform distribution between 0 and N-1 for selecting unique indices.
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_int_distribution<int> intDistribution(0, N - 1); // Uniform distribution.

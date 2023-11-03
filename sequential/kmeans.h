@@ -58,10 +58,10 @@ namespace Sequential {
             const std::vector<int> getIds(const std::vector<T>& data);
 
         private:
+            const std::string filePath = ""; // Path of the file with the points.
             int N; // Number of points.
             const int K; // Number of clusters.
             int dimensions; // Number of dimensions.
-            const std::string filePath = ""; // Path of the file with the points.
 
             std::vector<Point> points; // Vector of points.
             std::vector<Centroid> centroids; // Vector of centroids.

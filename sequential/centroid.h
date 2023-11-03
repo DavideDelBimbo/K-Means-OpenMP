@@ -1,7 +1,6 @@
 #ifndef K_MEANS_SEQUENTIAL_CENTROID_H
 #define K_MEANS_SEQUENTIAL_CENTROID_H
 
-#include <ostream>
 #include <vector>
 
 
@@ -13,17 +12,13 @@ namespace Sequential {
     std::vector<double> coordinates; // Vector of coordinates.
     int clusterId; // Identifier of the cluster.
 
-    /*
-      * Default constructor.
-    */
-    Centroid() = default;
 
     /*
       * Centroid constructor.
       * 
       * @param dimensions: Number of dimensions.
       * @param coordinates: Vector of coordinates.
-      * @param clusterId: Identifier of the centroid.
+      * @param clusterId: Identifier of the cluster.
     */
     Centroid(const int dimensions, const std::vector<double>& coordinates, const int clusterId);
   };

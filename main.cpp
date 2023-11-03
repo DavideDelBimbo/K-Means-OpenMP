@@ -94,7 +94,7 @@ int processInput(int argc, const char *argv[]) {
                 std::cout << "Invalid argument for base path. Please specify a valid base path." << std::endl;
                 return 1;
             }
-        } else if (strcmp(arg, "--log") == 0 || strcmp(arg, "-L") == 0) {
+        } else if (strcmp(arg, "--logs") == 0 || strcmp(arg, "-L") == 0) {
             // Enable logging of results.
             LOG = true;
         } else {

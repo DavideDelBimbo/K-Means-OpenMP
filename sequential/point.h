@@ -16,18 +16,14 @@ namespace Sequential {
 
 
     /*
-      * Point default constructor.
-    */
-    Point() = default;
-
-    /*
       * Point constructor.
       * 
       * @param dimensions: Number of dimensions.
       * @param coordinates: Vector of coordinates.
       * @param pointId: Identifier of the point.
+      * @param clusterId: Identifier of the cluster to which the point belongs.
     */
-    Point(const int dimensions, const std::vector<double>& coordinates, const int pointId);
+    Point(const int dimensions, const std::vector<double>& coordinates, const int pointId, const int clusterId);
   };
 }
 

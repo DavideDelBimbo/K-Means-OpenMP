@@ -11,7 +11,7 @@ namespace Parallel {
     class KMeans {
         public:
             /*
-                * KMeans constructor.
+                * KMeans constructor with random points.
                 * 
                 * @param N: Number of points.
                 * @param K: Number of clusters.
@@ -21,7 +21,7 @@ namespace Parallel {
             KMeans(const int N, const int K, const int dimensions, const int threads);
 
             /*
-                * KMeans constructor.
+                * KMeans constructor with points from dataset file.
                 * 
                 * @param filePath: Path of the file with the points.
                 * @param K: Number of clusters.
@@ -33,8 +33,8 @@ namespace Parallel {
             /*
                 * Execution of the k-means algorithm.
                 *
-                * @param base_path: The base path for the results.
-                * @param log: True if the results should be logged, false otherwise.
+                * @param base_path: The base path for the results (default: 'results\\').
+                * @param log: True if the results should be logged, false otherwise (default: false).
             */
             void run(const std::string &base_path = "results\\", const bool log = false);
 
@@ -57,14 +57,14 @@ namespace Parallel {
                 * @returns (std::vector<std::vector<int>>) The identifiers of the data.
             */
             template <typename T>
-            const std::vector<int> getIds(const T& data);
+            const std::vector<int> getClustersIds(const T& data);
 
         private:
+            const std::string filePath = ""; // Path of the file with the points.
             int N; // Number of points.
             const int K; // Number of clusters.
             int dimensions; // Number of dimensions.
             const int threads; // Number of threads.
-            const std::string filePath = ""; // Path of the file with the points.
 
             Points points; // Vector of points.
             Centroids centroids; // Vector of centroids.

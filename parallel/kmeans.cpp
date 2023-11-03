@@ -2,6 +2,7 @@
 #include <random>
 #include <cmath>
 #include <vector>
+#include <set>
 #include <float.h>
 #include <omp.h>
 
@@ -11,22 +12,9 @@
 
 
 namespace Parallel {
-    KMeans::KMeans(const int N, const int K, const int d, const int t) : N(N), K(K), dimensions(d), threads(t) {
-        // Initialize the points with random coordinates.
-        points = initializeRandomPoints();
+    KMeans::KMeans(const int N, const int K, const int d, const int t) : N(N), K(K), dimensions(d), threads(t), points(initializeRandomPoints()), centroids(initializeCentroids()) { }
 
-        // Initialize the centroids.
-        centroids = initializeCentroids();
-    };
-
-    KMeans::KMeans(const std::string& filePath, const int K, const int t) : filePath(filePath), K(K), threads(t) {
-        // Initialize the points from input file.
-        points = initializeInputPoints();
-
-        // Initialize the centroids.
-        centroids = initializeCentroids();
-    };
-
+    KMeans::KMeans(const std::string& filePath, const int K, const int t) : filePath(filePath), K(K), threads(t), points(initializeInputPoints()), centroids(initializeCentroids()) { }
 
 
     void KMeans::run(const std::string &basePath, const bool log) {
@@ -66,9 +54,9 @@ namespace Parallel {
 
             if (canPlot) {
                 // Log the iteration.
-                log_data(iterations, paths, "parallel", "points", getCoordinates(points), getIds(points));
+                log_data(iterations, paths, "parallel", "points", getCoordinates(points), getClustersIds(points));
 
-                log_data(iterations, paths, "parallel", "centroids", getCoordinates(centroids), getIds(centroids));
+                log_data(iterations, paths, "parallel", "centroids", getCoordinates(centroids), getClustersIds(centroids));
                 
                 // Plot the points and the centroids.
                 plot_data(iterations, paths, "parallel", initMode, N, K, dimensions);
@@ -95,7 +83,7 @@ namespace Parallel {
         std::uniform_real_distribution<double> uniformDistribution(0, MAX_RANGE); // Uniform distribution.
 
         // Initialize Point structure.
-        Points points(N, dimensions, std::vector<double>(N * dimensions, 0), std::vector<int>(N, 0));
+        Points points(N, dimensions, new double[N * dimensions], new int[N], new int[N]);
 
         // Generate N random points from the uniform distribution.
         for(int i = 0; i < N; i++) {
@@ -106,6 +94,9 @@ namespace Parallel {
 
             // Set the identifier of the point.
             points.pointsIds[i] = i;
+
+            // Set the identifier of the cluster.
+            points.clustersIds[i] = -1;
         }
 
         return points;
@@ -125,7 +116,6 @@ namespace Parallel {
 
         // Count the number of lines and columns in the file.
         int numColumns = 0;
-
         std::getline(file, line);
         std::stringstream ss(line);
         while (std::getline(ss, line, ',')) numColumns++;
@@ -144,7 +134,7 @@ namespace Parallel {
         file.seekg(0, std::ios::beg);
 
         // Initialize points structure.
-        Points points(N, dimensions, std::vector<double>(N * dimensions, 0), std::vector<int>(N, 0));
+        Points points(N, dimensions, new double[N * dimensions], new int[N], new int[N]);
 
         int i = 0;
         while (getline(file, line)) {
@@ -161,6 +151,9 @@ namespace Parallel {
             // Set the identifier of the point.
             points.pointsIds[i] = i;
 
+            // Set the identifier of the cluster.
+            points.clustersIds[i] = -1;
+
             // Increment the point.
             i++;
         }
@@ -169,16 +162,34 @@ namespace Parallel {
     }
 
     const Centroids KMeans::initializeCentroids() {
+        if (K > N) {
+            throw std::runtime_error("ERROR: K cannot be greater than N!");
+        }
+
         // Uniform distribution between 0 and N-1 for selecting unique indices.
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_int_distribution<int> intDistribution(0, N - 1); // Uniform distribution.
 
+        // Vector of random indices.
+        std::set<int> randomIndices;
+
+        // Generate K random indices.
+        while (randomIndices.size() < K) {
+            int randomIndex = intDistribution(generator);
+
+            // Check if the random index is unique.
+            if (randomIndices.find(randomIndex) == randomIndices.end()) {
+                randomIndices.insert(randomIndex);
+            }
+        }
+
+
         // Initialize Centroids structure.
-        Centroids centroids(K, dimensions, std::vector<double>(K * dimensions, 0), std::vector<int>(K, 0));
+        Centroids centroids(K, dimensions, new double[K * dimensions], new int[K]);
 
         // Generate K random centroids from points.
         for(int j = 0; j < K; j++) {
-            int randomIndex = intDistribution(generator);
+            int randomIndex = *std::next(randomIndices.begin(), j);
 
             for(int dim = 0; dim < dimensions; dim++) {
                 // Set the coordinates of the centroid.
@@ -195,7 +206,7 @@ namespace Parallel {
 
     const double KMeans::distance(const int pointId, const int centroidId) {
         double sum = 0;
-        #pragma omp simd
+        #pragma omp simd reduction(+:sum)
         for (int dim = 0; dim < dimensions; dim++) {
             sum += (centroids.coordinates[centroidId + K * dim] - points.coordinates[pointId + N * dim]) * (centroids.coordinates[centroidId + K * dim] - points.coordinates[pointId + N * dim]);
         }
@@ -229,17 +240,8 @@ namespace Parallel {
                     }
                 }
 
-
-                // Assign the point to the closest cluster.
-                if(points.clustersIds[i] != minClusterId) {
-                    // Check for convergence.
-                    converged = false;
-
-                    // Update the identifier of the cluster.
-                    points.clustersIds[i] = minClusterId;
-
-                }
-
+                // Update the identifier of the cluster.
+                points.clustersIds[i] = minClusterId;
 
                 // Calculate the mean of the points in each cluster.
                 for(int dim = 0; dim < dimensions; dim++) {
@@ -247,7 +249,7 @@ namespace Parallel {
                     // Sum the coordinates of the point assigned to the cluster.
                     clustersSum[minClusterId + K * dim] += points.coordinates[i + N * dim];
                 }
-                
+                    
                 #pragma omp atomic
                 // Increment the size of the cluster.
                 clustersSize[minClusterId]++;
@@ -257,10 +259,21 @@ namespace Parallel {
             #pragma omp for schedule(static) nowait
             // Update the centroids.
             for(int j = 0; j < K ; j++){
+                // Temporary vector for the previous coordinates of the centroid.
+                std::vector<double> tmpCoordinates(dimensions, 0);
+
                 // Update the centroid of the cluster.
                 for(int dim = 0; dim < dimensions; dim++) {
+                    // Save the previous centroid coordinates.
+                    tmpCoordinates[dim] = centroids.coordinates[j + K * dim];
+
                     // Calculate the new centroid coordinates.
                     centroids.coordinates[j + K * dim] = clustersSum[j + K * dim] / clustersSize[j];
+
+                    // Check for convergence.
+                    if (fabs(tmpCoordinates[dim] - centroids.coordinates[j + K * dim]) > EPSILON) {
+                        converged = false;
+                    }
                 }
             }
         }
@@ -284,7 +297,7 @@ namespace Parallel {
     }
 
     template <typename T>
-    const std::vector<int>  KMeans::getIds(const T& data) {
+    const std::vector<int>  KMeans::getClustersIds(const T& data) {
         std::vector<int> ids(data.size, 0);
         
         for(int i = 0; i < data.size; i++) {
@@ -293,5 +306,4 @@ namespace Parallel {
 
         return ids;
     }
-
 }
