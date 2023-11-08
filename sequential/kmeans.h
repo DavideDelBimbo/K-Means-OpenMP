@@ -105,7 +105,7 @@ namespace Sequential {
                 * 
                 * @returns (bool) True if the centroids have changed, false otherwise.
             */
-            bool kMeansIteration();
+            bool KMeansIteration();
     };
 }
 

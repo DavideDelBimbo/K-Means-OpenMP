@@ -7,7 +7,7 @@
 namespace Sequential {
   // Centroid in multidimensional space.
   struct Centroid {
-    int dimensions; // Number of dimensions.
+    const int dimensions; // Number of dimensions.
 
     std::vector<double> coordinates; // Vector of coordinates.
     int clusterId; // Identifier of the cluster.
@@ -21,6 +21,7 @@ namespace Sequential {
       * @param clusterId: Identifier of the cluster.
     */
     Centroid(const int dimensions, const std::vector<double>& coordinates, const int clusterId);
+
   };
 }
 

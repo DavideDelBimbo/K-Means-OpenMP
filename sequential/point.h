@@ -1,14 +1,13 @@
 #ifndef K_MEANS_SEQUENTIAL_POINT_H
 #define K_MEANS_SEQUENTIAL_POINT_H
 
-#include <ostream>
 #include <vector>
 
 
 namespace Sequential {
   // Point in multidimensional space.
   struct Point {
-    int dimensions; // Number of dimensions.
+    const int dimensions; // Number of dimensions.
 
     std::vector<double> coordinates; // Vector of coordinates.
     int pointId; // Identifier of the point.

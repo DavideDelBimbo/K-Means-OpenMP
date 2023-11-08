@@ -1,8 +1,8 @@
 #include <iostream>
-#include <stdexcept>
 #include <random>
 #include <cmath>
 #include <vector>
+#include <set>
 #include <float.h>
 #include <omp.h>
 
@@ -12,21 +12,9 @@
 
 
 namespace Sequential {
-    KMeans::KMeans(const int N, const int K, const int d) : N(N), K(K), dimensions(d) {
-        // Initialize the points with random coordinates.
-        points = initializeRandomPoints();
+    KMeans::KMeans(const int n, const int k, const int d) : N(n), K(k), dimensions(d), points (initializeRandomPoints()), centroids(initializeCentroids()) { }
 
-        // Initialize the centroids.
-        centroids = initializeCentroids();
-    };
-
-    KMeans::KMeans(const std::string& filePath, const int K) : filePath(filePath), K(K) {
-        // Initialize the points from input file.
-        points = initializeInputPoints();
-
-        // Initialize the centroids.
-        centroids = initializeCentroids();
-    };
+    KMeans::KMeans(const std::string& filePath, const int k) : filePath(filePath), K(k), points(initializeInputPoints()), centroids(initializeCentroids()) { }
 
 
     void KMeans::run(const std::string &basePath, const bool log) {
@@ -55,7 +43,7 @@ namespace Sequential {
             double startTime = omp_get_wtime();
 
             // Execute the iteration and check if the centroids have changed.
-            converged = kMeansIteration();
+            converged = KMeansIteration();
 
             // Stop the timer.
             double endTime = omp_get_wtime();
@@ -125,7 +113,7 @@ namespace Sequential {
         std::getline(file, line);
         std::stringstream ss(line);
         while (std::getline(ss, line, ',')) numColumns++;
-        
+
         // Count the number of lines in the file.
         int numLines = 1;
         while (std::getline(file, line)) numLines++;
@@ -173,16 +161,32 @@ namespace Sequential {
         std::default_random_engine generator(SEED); // Random number engine (with seed for reproducibility).
         std::uniform_int_distribution<int> intDistribution(0, N - 1); // Uniform distribution.
 
+        // Vector of random indices.
+        std::set<int> randomIndices;
+
+        // Generate K random indices.
+        while (randomIndices.size() < K) {
+            int randomIndex = intDistribution(generator);
+
+            // Check if the random index is unique.
+            if (randomIndices.find(randomIndex) == randomIndices.end()) {
+                randomIndices.insert(randomIndex);
+            }
+        }
+
         // Initialize vector of centroids.
         std::vector<Centroid> centroids(K, Centroid(dimensions, std::vector<double>(dimensions, 0), 0));
 
         // Generate K random centroids from points.
         for(int j = 0; j < K; j++) {
-            int randomIndex = intDistribution(generator);
+            // Get the j-th random index.
+            int randomIndex = *std::next(randomIndices.begin(), j);
 
-            // Set the coordinates of the centroid.
-            centroids[j].coordinates = points[randomIndex].coordinates;
-            
+            for(int dim = 0; dim < dimensions; dim++) {
+                // Set the coordinates of the centroid.
+                centroids[j].coordinates[dim] = points[randomIndex].coordinates[dim];
+            }
+
             // Set the identifier of the centroid.
             centroids[j].clusterId = j;
         }
@@ -201,7 +205,7 @@ namespace Sequential {
     }
 
 
-    bool KMeans::kMeansIteration() {
+    bool KMeans::KMeansIteration() {
         // Variables for the mean of the points in each cluster.
         std::vector<std::vector<double>> clustersSum(K, std::vector<double>(dimensions, 0)); // Sum of coordinates of points in each cluster.
         std::vector<int> clustersSize(K, 0); // Number of points in each cluster.
@@ -237,7 +241,7 @@ namespace Sequential {
         }
             
         // Update the centroids.
-        for(int j = 0; j < K ; j++){
+        for(int j = 0; j < K; j++){
             // Temporary variable for the previous centroid coordinate.
             double tmpCoordinate = 0;
 
@@ -261,10 +265,14 @@ namespace Sequential {
 
     template <typename T>
     const std::vector<std::vector<double>> KMeans::getCoordinates(const std::vector<T>& data) {
+        // Initialize the coordinates vector.
         std::vector<std::vector<double>> coordinates(data.size(), std::vector<double>(dimensions, 0));
         
+        // Fill the coordinates vector.
         for(int i = 0; i < data.size(); i++) {
-            coordinates[i] = data[i].coordinates;
+            for(int dim = 0; dim < dimensions; dim++) {
+                coordinates[i][dim] = data[i].coordinates[dim];
+            }
         }
 
         return coordinates;
@@ -272,8 +280,10 @@ namespace Sequential {
 
     template <typename T>
     const std::vector<int> KMeans::getIds(const std::vector<T>& data) {
+        // Initialize the ids vector.
         std::vector<int> ids(data.size(), 0);
         
+        // Fill the ids vector.
         for(int i = 0; i < data.size(); i++) {
             ids[i] = data[i].clusterId;
         }
