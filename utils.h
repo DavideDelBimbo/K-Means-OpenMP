@@ -278,11 +278,11 @@ inline void save_results(int iterations, double executionTimes, const FolderPath
     } else {
         // File doesn't exist, create new one with header
         outfile.open(paths.baseFolder + "results.txt");
-        outfile << (executionType == "parallel" ? "num_threads " : "") << "num_points num_clusters dimensions execution_time iterations" << std::endl;
+        outfile << "num_threads num_points num_clusters dimensions execution_time iterations" << std::endl;
     }
 
     // Save the results.
-    outfile << (executionType == "parallel" ? (std::to_string(omp_get_max_threads()) + " ") : "") << N << " " << K << " " << dimensions << " " << executionTimes << " " << iterations << std::endl;
+    outfile << (executionType == "parallel" ? (std::to_string(omp_get_max_threads()) + " ") : "1 ") << N << " " << K << " " << dimensions << " " << executionTimes << " " << iterations << std::endl;
     outfile.close();
 }
 

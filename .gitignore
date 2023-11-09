@@ -39,3 +39,4 @@ results/
 lib/
 build/
 datasets/dataset_1M.csv
+visualization/

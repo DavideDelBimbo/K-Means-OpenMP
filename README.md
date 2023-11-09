@@ -53,5 +53,10 @@ The results obtained from running the K-Means clustering algorithm using OpenMP 
 
 Before diving into the results, you may want to take a moment to configure the parameters in `params.h` to customize the behavior of the K-Means algorithm according to your specific needs and datasets.
 
+<p float="left" align="center">
+  <img src="https://github.com/DavideDelBimbo/K-Means-OpenMP/blob/main/report/parallel.gif" alt="Parallel execution" width="300" />
+  <img src="https://github.com/DavideDelBimbo/K-Means-OpenMP/blob/main/report/sequential.gif" alt="Sequential execution" width="300" /> 
+</p>
+
 ## License
 This project is licensed under the <a href="https://github.com/DavideDelBimbo/K-Means-OpenMP/blob/main/LICENSE" target="_blank">MIT</a> License.
