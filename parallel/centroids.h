@@ -3,7 +3,7 @@
 
 
 namespace Parallel {
-  // Centroids in multidimensional space using SoA format.
+  // Centroids in multidimensional space using SoA architecture.
   struct Centroids {
     const int size; // Number of clusters.
     const int dimensions; // Number of dimensions.

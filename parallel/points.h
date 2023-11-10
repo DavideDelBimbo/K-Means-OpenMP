@@ -3,7 +3,7 @@
 
 
 namespace Parallel {
-  // Points in multidimensional space using SoA format.
+  // Points in multidimensional space using SoA architecture.
   struct Points {
     const int size; // Number of points.
     const int dimensions; // Number of dimensions.

@@ -195,14 +195,14 @@ namespace Sequential {
     }
 
 
-    const double KMeans::distance(const Point &p, const Centroid &c) {
-        double sum = 0;
-        for (int dim = 0; dim < dimensions; dim++) {
-            sum += (c.coordinates[dim] - p.coordinates[dim]) * (c.coordinates[dim] - p.coordinates[dim]);
-        }
-
-        return sqrt(sum);
+const double KMeans::distance(const Point &p, const Centroid &c) {
+    double sum = 0;
+    for (int dim = 0; dim < dimensions; dim++) {
+        sum += (c.coordinates[dim] - p.coordinates[dim]) * (c.coordinates[dim] - p.coordinates[dim]);
     }
+
+    return sqrt(sum);
+}
 
 
     bool KMeans::KMeansIteration() {
@@ -230,7 +230,6 @@ namespace Sequential {
             // Assign the point to the closest cluster.
             points[i].clusterId = minClusterId;
 
-            // Calculate the mean of the points in each cluster.
             for(int dim = 0; dim < dimensions; dim++) {
                 // Sum the coordinates of the point assigned to the cluster.
                 clustersSum[minClusterId][dim] += points[i].coordinates[dim];

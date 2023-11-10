@@ -242,7 +242,6 @@ namespace Parallel {
             // Update the identifier of the cluster.
             points.clustersIds[i] = minClusterId;
 
-            // Calculate the mean of the points in each cluster.
             for(int dim = 0; dim < dimensions; dim++) {
                 #pragma omp atomic
                 // Sum the coordinates of the point assigned to the cluster.
