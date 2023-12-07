@@ -195,14 +195,14 @@ namespace Sequential {
     }
 
 
-const double KMeans::distance(const Point &p, const Centroid &c) {
-    double sum = 0;
-    for (int dim = 0; dim < dimensions; dim++) {
-        sum += (c.coordinates[dim] - p.coordinates[dim]) * (c.coordinates[dim] - p.coordinates[dim]);
-    }
+    const double KMeans::distance(const Point &p, const Centroid &c) {
+        double sum = 0;
+        for (int dim = 0; dim < dimensions; dim++) {
+            sum += (c.coordinates[dim] - p.coordinates[dim]) * (c.coordinates[dim] - p.coordinates[dim]);
+        }
 
-    return sqrt(sum);
-}
+        return sqrt(sum);
+    }
 
 
     bool KMeans::KMeansIteration() {

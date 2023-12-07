@@ -225,7 +225,7 @@ namespace Parallel {
         bool converged = true;
 
         // Assign each point to the closest centroid.
-        #pragma omp parallel for schedule(static) default(none) shared(points, centroids, clustersSum, clustersSize, converged) 
+        #pragma omp parallel for schedule(static) default(none) shared(points, centroids, clustersSum, clustersSize) 
         for(int i = 0; i < N; i++) {
             double minDist = DBL_MAX; // Distance to the closest cluster (initialized to infinity).
             int minClusterId = -1; // Id of the closest cluster (initialize to -1).
